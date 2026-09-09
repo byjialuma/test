@@ -6,187 +6,339 @@
 <title>待办清单</title>
 <style>
   :root {
-    --pku-red: #94070A;          /* 北大红：C0 M100 Y100 K45 / RGB 139,0,18 */
+    --pku-red: #94070A;            /* 北大红 */
     --pku-red-dark: #7a0508;
-    --pku-red-soft: #fbf0f0;
-    --text-main: #2b2b2b;
-    --text-light: #8a8a8a;
-    --line: #ece5e2;
+    --pku-red-soft: #fbecec;
+    --pku-red-tint: #fff5f4;
+    --ink: #22181a;
+    --ink-soft: #6e5f60;
+    --muted: #a59a9b;
+    --line: #efe5e2;
+    --bg-grad: radial-gradient(1100px 600px at 80% -10%, rgba(148, 7, 10, 0.07), transparent 60%),
+               radial-gradient(800px 500px at -10% 0%, rgba(255, 196, 184, 0.35), transparent 55%),
+               linear-gradient(180deg, #fdf7f5 0%, #faf4f1 100%);
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
-
+  html, body { height: 100%; }
   body {
-    font-family: "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
-    background: #faf8f7;
-    color: var(--text-main);
+    font-family: "PingFang SC", "Microsoft YaHei", "Segoe UI", -apple-system, sans-serif;
+    background: var(--bg-grad);
+    color: var(--ink);
     min-height: 100vh;
     display: flex;
     justify-content: center;
-    padding: 40px 16px 60px;
+    padding: 48px 20px 80px;
+    -webkit-font-smoothing: antialiased;
   }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-image: radial-gradient(circle at 1px 1px, rgba(148, 7, 10, 0.05) 1px, transparent 0);
+    background-size: 28px 28px;
+    pointer-events: none;
+    mask-image: linear-gradient(180deg, rgba(0,0,0,.5), transparent 70%);
+    -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,.5), transparent 70%);
+    z-index: 0;
+  }
+  .app { width: 100%; max-width: 720px; position: relative; z-index: 1; }
 
-  .app { width: 100%; max-width: 600px; }
-
-  /* ===== 头部 ===== */
-  header { margin-bottom: 20px; }
-  header h1 {
-    font-size: 26px;
-    font-weight: 700;
-    color: var(--pku-red);
+  /* ====== 头部 / Hero ====== */
+  .hero {
     display: flex;
     align-items: center;
-    gap: 10px;
-    letter-spacing: 2px;
+    gap: 24px;
+    margin-bottom: 22px;
+    padding: 4px 8px 2px;
   }
-  header h1::before {
+  .hero-text { flex: 1; min-width: 0; }
+  .hero h1 {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--pku-red);
+    letter-spacing: 3px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .hero h1::before {
     content: "";
-    width: 6px;
-    height: 26px;
-    background: var(--pku-red);
-    border-radius: 3px;
+    width: 8px;
+    height: 32px;
+    background: linear-gradient(180deg, var(--pku-red) 0%, #c0151a 100%);
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(148, 7, 10, 0.35);
   }
-  header .sub {
-    margin-top: 8px;
-    font-size: 13px;
-    color: var(--text-light);
-    padding-left: 16px;
+  .hero .date {
+    margin-top: 10px;
+    font-size: 14px;
+    color: var(--ink-soft);
+    padding-left: 20px;
   }
+  .hero .date .dot { color: var(--pku-red); margin: 0 6px; }
+  .hero .date strong { color: var(--pku-red); font-weight: 700; }
 
-  /* ===== 输入卡片 ===== */
-  .composer {
+  .hero .stats {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    padding-left: 20px;
+    flex-wrap: wrap;
+  }
+  .stat {
     background: #fff;
     border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 12px;
-    box-shadow: 0 2px 10px rgba(148, 7, 10, 0.05);
+    border-radius: 10px;
+    padding: 6px 12px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 2px 6px rgba(148, 7, 10, 0.04);
   }
-  .composer:focus-within { border-color: var(--pku-red); box-shadow: 0 2px 14px rgba(148, 7, 10, 0.12); }
+  .stat b { color: var(--pku-red); font-weight: 700; font-size: 13px; }
+  .stat.warn { background: var(--pku-red-soft); border-color: #f2c4c1; color: var(--pku-red); }
+  .stat.warn b { color: var(--pku-red); }
 
-  .input-row { display: flex; gap: 10px; padding: 2px 4px 0 8px; }
+  .progress {
+    flex-shrink: 0;
+    width: 96px;
+    height: 96px;
+    position: relative;
+  }
+  .progress svg { transform: rotate(-90deg); }
+  .progress .ring-bg {
+    fill: none;
+    stroke: rgba(148, 7, 10, 0.1);
+    stroke-width: 8;
+  }
+  .progress .ring-fg {
+    fill: none;
+    stroke: var(--pku-red);
+    stroke-width: 8;
+    stroke-linecap: round;
+    transition: stroke-dashoffset .6s cubic-bezier(.2,.7,.2,1);
+    filter: drop-shadow(0 2px 4px rgba(148, 7, 10, 0.25));
+  }
+  .progress .pct {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--pku-red);
+    letter-spacing: -0.5px;
+  }
+
+  /* ====== 输入卡 ====== */
+  .composer {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 14px;
+    box-shadow: 0 10px 32px -16px rgba(148, 7, 10, 0.18), 0 2px 8px rgba(148, 7, 10, 0.04);
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .composer:focus-within {
+    border-color: var(--pku-red);
+    box-shadow: 0 14px 38px -14px rgba(148, 7, 10, 0.28), 0 2px 12px rgba(148, 7, 10, 0.08);
+  }
+  .input-row { display: flex; gap: 10px; padding: 4px 6px 0 12px; }
   .input-row input {
     flex: 1;
     border: none;
     outline: none;
     font-size: 15px;
     background: transparent;
-    color: var(--text-main);
+    color: var(--ink);
   }
-  .input-row input::placeholder { color: #c4bdb9; }
+  .input-row input::placeholder { color: #c5b9b6; }
   .input-row button {
     border: none;
-    background: var(--pku-red);
+    background: linear-gradient(180deg, var(--pku-red) 0%, var(--pku-red-dark) 100%);
     color: #fff;
-    font-size: 15px;
+    font-size: 14px;
+    font-weight: 600;
     padding: 10px 22px;
-    border-radius: 8px;
+    border-radius: 10px;
     cursor: pointer;
-    transition: background .2s, transform .05s;
+    transition: transform .05s, box-shadow .2s, filter .2s;
+    box-shadow: 0 6px 14px -4px rgba(148, 7, 10, 0.5);
     white-space: nowrap;
+    letter-spacing: 1px;
   }
-  .input-row button:hover { background: var(--pku-red-dark); }
+  .input-row button:hover { filter: brightness(1.05); box-shadow: 0 8px 18px -4px rgba(148, 7, 10, 0.6); }
   .input-row button:active { transform: scale(.97); }
 
   .options {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 10px 16px;
-    margin-top: 12px;
-    padding: 10px 8px 2px;
+    gap: 14px 18px;
+    margin-top: 14px;
+    padding: 12px 12px 4px;
     border-top: 1px dashed var(--line);
   }
-  .opt { display: flex; align-items: center; gap: 6px; }
+  .opt { display: flex; align-items: center; gap: 8px; }
   .opt .label {
     font-size: 12px;
-    color: var(--text-light);
+    color: var(--muted);
     user-select: none;
     white-space: nowrap;
+    letter-spacing: 1px;
   }
-
-  .chip-group { display: flex; gap: 4px; flex-wrap: wrap; }
+  .chip-group { display: flex; gap: 6px; flex-wrap: wrap; }
   .opt-chip {
-    border: 1px solid transparent;
-    background: #f2efed;
-    color: #6f6a67;
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--ink-soft);
     font-size: 12px;
-    padding: 4px 10px;
-    border-radius: 14px;
+    padding: 5px 12px;
+    border-radius: 16px;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    transition: all .15s;
+    gap: 6px;
+    transition: all .18s;
     user-select: none;
+    font-weight: 500;
   }
   .opt-chip .dot { width: 8px; height: 8px; border-radius: 50%; }
-  .opt-chip:hover { background: #e9e4e1; }
-  .opt-chip.active { background: var(--pku-red-soft); border-color: var(--pku-red); color: var(--pku-red); font-weight: 600; }
-  .opt-chip.active .dot { box-shadow: 0 0 0 1px rgba(148,7,10,.3); }
-
-  .opt-chip.p1.active { background:#fbe9e9; border-color:#c0392b; color:#c0392b; }
-  .opt-chip.p2.active { background:#fdf3e0; border-color:#dd8a1e; color:#b06a12; }
-  .opt-chip.p3.active { background:#f0f2f3; border-color:#8f9aa3; color:#5c6670; }
+  .opt-chip:hover { transform: translateY(-1px); box-shadow: 0 4px 10px -2px rgba(0,0,0,.08); }
+  .opt-chip.active {
+    background: var(--pku-red-soft);
+    border-color: var(--pku-red);
+    color: var(--pku-red);
+    font-weight: 700;
+    box-shadow: 0 4px 10px -2px rgba(148, 7, 10, 0.25);
+  }
+  .opt-chip.p1.active { background:#fbe9e9; border-color:#c0392b; color:#c0392b; box-shadow: 0 4px 10px -2px rgba(192,57,43,.25); }
+  .opt-chip.p2.active { background:#fdf3e0; border-color:#dd8a1e; color:#a8630e; box-shadow: 0 4px 10px -2px rgba(221,138,30,.25); }
+  .opt-chip.p3.active { background:#eef1f3; border-color:#8f9aa3; color:#5c6670; box-shadow: 0 4px 10px -2px rgba(143,154,163,.25); }
 
   .opt input[type="date"] {
-    border: 1px solid #ddd6d2;
+    border: 1px solid var(--line);
     border-radius: 8px;
     font-size: 13px;
-    padding: 4px 8px;
-    color: var(--text-main);
+    padding: 5px 8px;
+    color: var(--ink);
     background: #fff;
     outline: none;
     font-family: inherit;
+    transition: border-color .15s, box-shadow .15s;
   }
-  .opt input[type="date"]:focus { border-color: var(--pku-red); }
+  .opt input[type="date"]:focus { border-color: var(--pku-red); box-shadow: 0 0 0 3px rgba(148, 7, 10, 0.1); }
 
-  /* ===== 提醒条 ===== */
+  /* ====== 提醒条 ====== */
   .alert-bar {
     display: none;
     align-items: center;
-    gap: 10px;
-    margin-top: 14px;
-    padding: 10px 14px;
-    border-radius: 10px;
+    gap: 12px;
+    margin-top: 16px;
+    padding: 12px 16px;
+    border-radius: 12px;
     font-size: 13px;
-    animation: slideIn .25s ease;
+    animation: fadeUp .3s ease;
+    border: 1px solid transparent;
   }
   .alert-bar.show { display: flex; }
-  .alert-bar.over { background: #fdecec; color: #a02624; border: 1px solid #f2c6c4; }
-  .alert-bar.today { background: #fdf3e0; color: #9c6b13; border: 1px solid #eed9ae; }
-  .alert-bar .icon { font-size: 15px; }
+  .alert-bar.over {
+    background: linear-gradient(135deg, #fff5f4 0%, #ffe6e4 100%);
+    color: var(--pku-red);
+    border-color: #f1bcb9;
+    box-shadow: 0 6px 20px -10px rgba(148, 7, 10, 0.3);
+  }
+  .alert-bar.today {
+    background: linear-gradient(135deg, #fffaf2 0%, #fce9c8 100%);
+    color: #8a5a10;
+    border-color: #efd49c;
+  }
+  .alert-bar .icon {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,.7);
+    font-size: 14px;
+    box-shadow: 0 2px 6px rgba(0,0,0,.06);
+  }
   .alert-bar .close {
     margin-left: auto;
     border: none;
-    background: none;
-    font-size: 16px;
+    background: rgba(255,255,255,.6);
+    font-size: 14px;
     cursor: pointer;
     color: inherit;
-    opacity: .6;
-    padding: 0 2px;
+    opacity: .7;
+    padding: 4px 10px;
+    border-radius: 8px;
+    transition: opacity .2s, background .2s;
   }
-  .alert-bar .close:hover { opacity: 1; }
+  .alert-bar .close:hover { opacity: 1; background: rgba(255,255,255,.95); }
 
-  /* ===== 筛选 ===== */
-  .filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 16px; }
-  .filters .label { font-size: 12px; color: var(--text-light); }
-  .seg { display: flex; background: #f2efed; border-radius: 8px; padding: 2px; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ====== 筛选 ====== */
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 16px;
+    margin-top: 20px;
+    padding: 4px 4px;
+  }
+  .filters .label { font-size: 12px; color: var(--muted); letter-spacing: 1px; }
+  .seg {
+    display: flex;
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 3px;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
   .seg button {
     border: none;
     background: none;
     font-size: 13px;
-    padding: 5px 12px;
-    border-radius: 6px;
+    padding: 6px 14px;
+    border-radius: 8px;
     cursor: pointer;
-    color: #6f6a67;
-    transition: all .15s;
+    color: var(--ink-soft);
+    transition: all .2s;
+    font-weight: 500;
   }
-  .seg button.active { background: #fff; color: var(--pku-red); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .seg button:hover { color: var(--pku-red); }
+  .seg button.active {
+    background: #fff;
+    color: var(--pku-red);
+    font-weight: 700;
+    box-shadow: 0 2px 8px -2px rgba(148, 7, 10, 0.25), 0 0 0 1px rgba(148, 7, 10, 0.08);
+  }
   .filters .spacer { flex: 1; }
-  .filters .hint { font-size: 12px; color: var(--text-light); }
+  .filters .hint {
+    font-size: 12px;
+    color: var(--muted);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .filters .hint::before {
+    content: "↕";
+    color: var(--pku-red);
+    font-size: 12px;
+  }
 
-  /* ===== 列表 ===== */
-  .list { margin-top: 14px; }
+  /* ====== 列表 ====== */
+  .list { margin-top: 14px; display: flex; flex-direction: column; gap: 10px; }
 
   .item {
     display: flex;
@@ -194,131 +346,225 @@
     gap: 14px;
     background: #fff;
     border: 1px solid var(--line);
-    border-radius: 12px;
-    padding: 14px 16px;
-    margin-bottom: 10px;
-    transition: box-shadow .2s;
-    animation: slideIn .25s ease;
+    border-radius: 14px;
+    padding: 16px 18px;
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp .35s cubic-bezier(.2,.7,.2,1);
+    transition: transform .15s, box-shadow .2s, border-color .2s;
+    box-shadow: 0 2px 8px -4px rgba(148, 7, 10, 0.08);
   }
-  @keyframes slideIn {
-    from { opacity: 0; transform: translateY(-6px); }
-    to   { opacity: 1; transform: translateY(0); }
+  .item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px -16px rgba(148, 7, 10, 0.2);
+    border-color: #e6d4d1;
   }
-  .item:hover { box-shadow: 0 3px 12px rgba(148, 7, 10, 0.06); }
-
-  .item.border-high { border-left: 3px solid var(--pku-red); }
-  .item.border-med  { border-left: 3px solid #dd8a1e; }
-  .item.border-low  { border-left: 3px solid transparent; }
+  .item.border-high::before,
+  .item.border-med::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 14px; bottom: 14px;
+    width: 4px;
+    border-radius: 0 4px 4px 0;
+  }
+  .item.border-high::before { background: linear-gradient(180deg, var(--pku-red), #c0151a); }
+  .item.border-med::before  { background: linear-gradient(180deg, #e0a23a, #c97a1e); }
+  .item.border-low::before  { background: linear-gradient(180deg, #e0d8d6, #cbc1be); left:0; top:0; bottom:0; width:4px; opacity: .5; }
 
   .check {
-    width: 24px;
-    height: 24px;
+    width: 26px;
+    height: 26px;
     border-radius: 50%;
-    border: 2px solid #d9cec9;
+    border: 2px solid #d3c7c3;
     background: #fff;
     cursor: pointer;
     flex-shrink: 0;
     position: relative;
     margin-top: 1px;
-    transition: background .2s, border-color .2s;
+    transition: border-color .2s, background .25s;
   }
   .check:hover { border-color: var(--pku-red); }
-  .item.done .check { background: var(--pku-red); border-color: var(--pku-red); }
+  .item.done .check {
+    background: linear-gradient(135deg, var(--pku-red) 0%, #c0151a 100%);
+    border-color: var(--pku-red);
+    box-shadow: 0 4px 12px -4px rgba(148, 7, 10, 0.5);
+  }
   .item.done .check::after {
     content: "";
     position: absolute;
-    left: 6px; top: 2px;
+    left: 7px; top: 3px;
     width: 6px; height: 12px;
     border: solid #fff;
     border-width: 0 2.5px 2.5px 0;
     transform: rotate(45deg);
-    animation: pop .15s ease;
+    animation: pop .25s cubic-bezier(.2,.9,.3,1.3);
   }
   @keyframes pop {
     from { transform: rotate(45deg) scale(.4); opacity: 0; }
     to   { transform: rotate(45deg) scale(1); opacity: 1; }
   }
+  /* 完成时的扩散波纹 */
+  .item .ripple {
+    position: absolute;
+    left: 22px; top: 23px;
+    width: 0; height: 0;
+    border-radius: 50%;
+    background: rgba(148, 7, 10, 0.25);
+    pointer-events: none;
+  }
+  .item.rippling .ripple {
+    animation: ripple .55s ease-out;
+  }
+  @keyframes ripple {
+    from { width: 0; height: 0; opacity: .55; }
+    to   { width: 200px; height: 200px; left: -78px; top: -77px; opacity: 0; }
+  }
 
   .main { flex: 1; min-width: 0; }
   .text {
-    font-size: 15px;
-    line-height: 1.5;
+    font-size: 15.5px;
+    line-height: 1.55;
     word-break: break-all;
-    transition: color .2s;
+    color: var(--ink);
+    transition: color .25s;
+    font-weight: 500;
   }
-  .item.done .text { color: var(--text-light); text-decoration: line-through; text-decoration-color: #cfb4b1; }
+  .item.done .text {
+    color: var(--muted);
+    text-decoration: line-through;
+    text-decoration-color: var(--pku-red);
+    text-decoration-thickness: 1.5px;
+    font-weight: 400;
+  }
 
-  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; align-items: center; }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; align-items: center; }
   .item.done .tags { opacity: .55; }
 
   .tag {
     font-size: 11px;
-    padding: 2px 8px;
-    border-radius: 9px;
+    padding: 3px 10px;
+    border-radius: 10px;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 5px;
     white-space: nowrap;
+    font-weight: 600;
+    border: 1px solid transparent;
   }
   .tag .dot { width: 7px; height: 7px; border-radius: 50%; }
-  .tag.cat { background: #f2f0ee; color: #6f6a67; }
-  .tag.pri { font-weight: 600; }
-  .tag.p1 { background: #fbe9e9; color: #c0392b; }
-  .tag.p2 { background: #fdf3e0; color: #b06a12; }
-  .tag.p3 { background: #f0f2f3; color: #5c6670; }
-  .tag.due { background: #f3f2f0; color: #7c7671; }
-  .tag.due.today { background: var(--pku-red-soft); color: var(--pku-red); font-weight: 600; }
-  .tag.due.over { background: var(--pku-red); color: #fff; font-weight: 600; }
+  .tag.cat { background: #f6f2f0; color: var(--ink-soft); border-color: #ece5e2; }
+  .tag.p1 { background: #fdecec; color: #b22b1d; border-color: #f3b9b4; }
+  .tag.p2 { background: #fef0d6; color: #8b530b; border-color: #efd49c; }
+  .tag.p3 { background: #eef1f3; color: #4a5666; border-color: #d8dde2; }
+  .tag.due { background: #f4f1ef; color: var(--ink-soft); border-color: #ebe3df; }
+  .tag.due.today {
+    background: linear-gradient(135deg, var(--pku-red), #c0151a);
+    color: #fff;
+    border-color: var(--pku-red);
+    box-shadow: 0 4px 10px -3px rgba(148, 7, 10, 0.4);
+  }
+  .tag.due.over {
+    background: #4a0305;
+    color: #fff;
+    border-color: #2a0103;
+    animation: blink 2s ease-in-out infinite;
+  }
+  @keyframes blink {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(148, 7, 10, 0.4); }
+    50%      { box-shadow: 0 0 0 6px rgba(148, 7, 10, 0); }
+  }
 
   .delete {
     border: none;
     background: none;
-    color: #d9cec9;
+    color: #cfc4c1;
     font-size: 20px;
     line-height: 1;
     cursor: pointer;
     opacity: 0;
-    transition: opacity .2s, color .2s;
-    padding: 2px 4px;
+    transition: opacity .2s, color .2s, transform .15s;
+    padding: 4px 6px;
+    border-radius: 6px;
   }
   .item:hover .delete { opacity: 1; }
-  .delete:hover { color: var(--pku-red); }
+  .delete:hover { color: var(--pku-red); background: var(--pku-red-tint); }
 
-  .empty { text-align: center; color: var(--text-light); font-size: 14px; padding: 36px 0; }
-  .empty .mark { font-size: 38px; display: block; margin-bottom: 10px; opacity: .45; }
+  /* ====== 空状态 ====== */
+  .empty {
+    text-align: center;
+    color: var(--ink-soft);
+    font-size: 14px;
+    padding: 48px 0 32px;
+  }
+  .empty svg { display: block; margin: 0 auto 14px; }
+  .empty .ttl { font-size: 16px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+  .empty .sub { font-size: 13px; color: var(--muted); }
 
-  /* ===== 底部 ===== */
+  /* ====== 底部 ====== */
   footer {
-    margin-top: 16px;
+    margin-top: 22px;
+    padding: 4px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 8px;
     font-size: 13px;
-    color: var(--text-light);
+    color: var(--ink-soft);
   }
-  footer .count strong { color: var(--pku-red); }
+  footer .count strong { color: var(--pku-red); font-weight: 700; }
   footer button {
-    border: none;
-    background: none;
-    color: var(--text-light);
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--ink-soft);
     font-size: 13px;
     cursor: pointer;
-    padding: 4px 6px;
-    border-radius: 6px;
-    transition: color .2s;
+    padding: 6px 14px;
+    border-radius: 10px;
+    transition: all .2s;
   }
-  footer button:hover { color: var(--pku-red); }
+  footer button:hover { color: var(--pku-red); border-color: var(--pku-red); box-shadow: 0 4px 10px -4px rgba(148,7,10,.25); }
   footer button:disabled { display: none; }
+
+  /* ====== 移动端 ====== */
+  @media (max-width: 540px) {
+    body { padding: 28px 14px 60px; }
+    .hero { flex-direction: column; align-items: flex-start; gap: 14px; }
+    .hero h1 { font-size: 26px; }
+    .hero h1::before { height: 26px; width: 6px; }
+    .progress { width: 80px; height: 80px; }
+    .progress .pct { font-size: 15px; }
+    .options { gap: 10px; }
+  }
+
+  /* 自定义滚动条 */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: #d6c8c4; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--pku-red); }
 </style>
 </head>
 <body>
   <main class="app">
-    <header>
-      <h1>待办清单</h1>
-      <p class="sub" id="todayLine">记录每一件该做的事，完成一件，勾掉一件。</p>
-    </header>
+    <!-- Hero -->
+    <section class="hero">
+      <div class="hero-text">
+        <h1>待办清单</h1>
+        <div class="date" id="todayLine">今天 <span class="dot">·</span> <strong>--</strong></div>
+        <div class="stats">
+          <span class="stat">共 <b id="total">0</b> 项</span>
+          <span class="stat">已完成 <b id="doneCount">0</b> 项</span>
+          <span class="stat">今日到期 <b id="dueToday">0</b> 项</span>
+          <span class="stat warn" id="overStat" style="display:none">已逾期 <b id="overCount">0</b> 项</span>
+        </div>
+      </div>
+      <div class="progress" aria-label="完成进度">
+        <svg width="96" height="96" viewBox="0 0 96 96">
+          <circle class="ring-bg" cx="48" cy="48" r="40"></circle>
+          <circle class="ring-fg" id="ringFg" cx="48" cy="48" r="40" stroke-dasharray="251.327" stroke-dashoffset="251.327"></circle>
+        </svg>
+        <div class="pct" id="pct">0%</div>
+      </div>
+    </section>
 
     <!-- 输入区 -->
     <div class="composer">
@@ -346,7 +592,7 @@
     <div class="alert-bar" id="alertBar">
       <span class="icon">⏰</span>
       <span id="alertText"></span>
-      <button class="close" id="alertClose" title="知道了">×</button>
+      <button class="close" id="alertClose">知道了</button>
     </div>
 
     <!-- 筛选 -->
@@ -366,17 +612,14 @@
         <button data-c="other">其他</button>
       </div>
       <span class="spacer"></span>
-      <span class="hint" id="sortHint">自动按优先级·到期排序</span>
+      <span class="hint">按优先级 · 到期日排序</span>
     </div>
 
     <div class="list" id="list"></div>
-    <div class="empty" id="empty" style="display:none">
-      <span class="mark">☑</span>
-      <span id="emptyText">暂无待办事项，先添加一件吧</span>
-    </div>
+    <div class="empty" id="empty" style="display:none"></div>
 
     <footer>
-      <span class="count">共 <strong id="total">0</strong> 项 · 待完成 <strong id="pending">0</strong> 项 · 今日到期 <strong id="dueToday">0</strong> 项</span>
+      <span class="count">待完成 <strong id="pending">0</strong> 项</span>
       <button id="clearDone">清除已完成</button>
     </footer>
   </main>
@@ -388,7 +631,6 @@
   var STORAGE_KEY = "pku-todo-list";
   var REMIND_KEY  = "pku-todo-remind";
 
-  /* ---------- 常量 ---------- */
   var CATS = [
     { id: "work",  name: "工作", color: "#4a7fb5" },
     { id: "study", name: "学习", color: "#3d9a8f" },
@@ -396,26 +638,22 @@
     { id: "other", name: "其他", color: "#9aa0a6" }
   ];
   var PRI_LEVELS = [
-    { val: 1, name: "高", color: "#c0392b" },
-    { val: 2, name: "中", color: "#b06a12" },
-    { val: 3, name: "低", color: "#5c6670" }
+    { val: 1, name: "高" },
+    { val: 2, name: "中" },
+    { val: 3, name: "低" }
   ];
 
   var state = {
     todos: loadTodos(),
-    cat: "other",     // 新增时的默认分类
-    pri: 2,           // 新增时的默认优先级
-    status: "all",    // all / open / done
-    catFilter: "all"  // 分类筛选
+    cat: "other",
+    pri: 2,
+    status: "all",
+    catFilter: "all"
   };
 
   /* ---------- 工具 ---------- */
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
-
-  function todayStr() {
-    var d = new Date();
-    return fmt(d);
-  }
+  function todayStr() { return fmt(new Date()); }
   function fmt(d) {
     var m = ("0" + (d.getMonth() + 1)).slice(-2);
     var day = ("0" + d.getDate()).slice(-2);
@@ -425,14 +663,12 @@
     var p = s.split("-");
     return new Date(+p[0], +p[1] - 1, +p[2]);
   }
-  /* 距今天数：0=今天，>0 未来，<0 已逾期 */
   function dueDelta(dueStr) {
     if (!dueStr) return null;
     var today = new Date();
     today.setHours(0, 0, 0, 0);
     return Math.round((parseDue(dueStr) - today) / 86400000);
   }
-
   function catById(id) {
     for (var i = 0; i < CATS.length; i++) if (CATS[i].id === id) return CATS[i];
     return CATS[3];
@@ -456,26 +692,24 @@
       });
     } catch (e) { return []; }
   }
-
   function save() {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.todos)); } catch (e) {}
   }
 
-  /* ---------- 排序：未完成置顶，按优先级→到期→创建顺序 ---------- */
+  /* ---------- 排序 ---------- */
   function sorted() {
-    var now = todayStr();
     return state.todos.slice().sort(function (a, b) {
       if (a.done !== b.done) return a.done ? 1 : -1;
       if (a.done) return b.created - a.created;
-      if (a.pri !== b.pri) return a.pri - b.pri;                    // 高(1)在前
+      if (a.pri !== b.pri) return a.pri - b.pri;
       var da = a.due ? dueDelta(a.due) : 9999;
       var db = b.due ? dueDelta(b.due) : 9999;
-      if (da !== db) return da - db;                                // 临近到期在前（含逾期）
+      if (da !== db) return da - db;
       return b.created - a.created;
     });
   }
 
-  /* ---------- 渲染：筛选器 ---------- */
+  /* ---------- 渲染选项 chips ---------- */
   function renderCatOptions() {
     var g = document.getElementById("catGroup");
     var html = "";
@@ -515,10 +749,8 @@
     });
   }
 
-  /* ---------- 提醒（浏览器通知，本地可用性兜底为页面横幅） ---------- */
-  function notifSupported() {
-    return typeof Notification !== "undefined";
-  }
+  /* ---------- 提醒 ---------- */
+  function notifSupported() { return typeof Notification !== "undefined"; }
   function ensureNotifPermission() {
     if (notifSupported() && Notification.permission === "default") {
       Notification.requestPermission().catch(function () {});
@@ -533,48 +765,41 @@
   function writeRemindLog(ids) {
     try { localStorage.setItem(REMIND_KEY, JSON.stringify({ date: todayStr(), ids: ids })); } catch (e) {}
   }
-
   function dueStats() {
-    var over = 0, today = 0, soon = 0;
-    var soonId = null;
+    var over = 0, today = 0;
     state.todos.forEach(function (t) {
       if (t.done || !t.due) return;
       var d = dueDelta(t.due);
-      if (d < 0) { over++; soonId = t.id; }
-      else if (d === 0) { today++; if (!soonId) soonId = t.id; }
-      else if (d <= 2) { soon++; }
+      if (d < 0) over++;
+      else if (d === 0) today++;
     });
-    return { over: over, today: today, soon: soon };
+    return { over: over, today: today };
   }
 
-  var dismissedKey = null;   // 用户手动关闭的提醒快照（逾期数:今日数）
+  var dismissedKey = null;
 
-  /* 页面横幅 + 系统通知（同一任务每天至多一次系统通知） */
-  function checkReminders(interactive) {
+  function checkReminders() {
     var bar = document.getElementById("alertBar");
     var txt = document.getElementById("alertText");
     var st = dueStats();
     var key = st.over + ":" + st.today;
 
-    // 页面横幅（若与上次手动关闭的状态一致则不再打扰）
-    if (dismissedKey === key && !interactive) {
+    if (dismissedKey === key) {
       bar.className = "alert-bar";
     } else if (st.over > 0) {
       bar.className = "alert-bar show over";
-      txt.textContent = "有 " + st.over + " 项已逾期" + (st.today > 0 ? "，另有 " + st.today + " 项今日到期" : "") + "，记得处理哦";
+      txt.textContent = "有 " + st.over + " 项已逾期" + (st.today > 0 ? "，另有 " + st.today + " 项今日到期" : "") + "，记得尽快处理";
     } else if (st.today > 0) {
       bar.className = "alert-bar show today";
-      txt.textContent = "有 " + st.today + " 项今天到期";
+      txt.textContent = "今天有 " + st.today + " 项待办到期，加油完成";
     } else {
       bar.className = "alert-bar";
     }
 
-    // 系统通知（每天每任务一次）
     var reminded = readRemindLog();
     var dueNow = state.todos.filter(function (t) {
       if (t.done || !t.due) return false;
-      var d = dueDelta(t.due);
-      return d <= 0;
+      return dueDelta(t.due) <= 0;
     });
     var fresh = dueNow.filter(function (t) { return reminded.indexOf(t.id) < 0; });
     if (fresh.length && notifSupported() && Notification.permission === "granted") {
@@ -592,11 +817,22 @@
       writeRemindLog(reminded);
     }
 
-    // 标签页标题提醒
     document.title = st.over > 0 ? "(" + st.over + " 逾期) 待办清单" : "待办清单";
   }
 
   /* ---------- 列表渲染 ---------- */
+  var EMPTY_SVG = '<svg width="120" height="120" viewBox="0 0 120 120" fill="none">' +
+    '<circle cx="60" cy="60" r="50" fill="#fbecec" opacity=".6"/>' +
+    '<circle cx="60" cy="60" r="38" fill="#fff" stroke="#94070A" stroke-width="1.5" stroke-dasharray="3 4" opacity=".7"/>' +
+    '<path d="M44 60 L55 72 L78 48" stroke="#94070A" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' +
+    '</svg>';
+
+  function renderEmpty(filterText, subText) {
+    return EMPTY_SVG +
+      '<div class="ttl">' + filterText + '</div>' +
+      '<div class="sub">' + subText + '</div>';
+  }
+
   function visibleTodos() {
     return sorted().filter(function (t) {
       if (state.status === "open" && t.done) return false;
@@ -620,21 +856,23 @@
 
       var tags = "";
       tags += '<span class="tag cat"><span class="dot" style="background:' + c.color + '"></span>' + c.name + "</span>";
-      tags += '<span class="tag pri p' + t.pri + '">' + (t.pri === 1 ? "高" : t.pri === 2 ? "中" : "低") + "优先级</span>";
+      tags += '<span class="tag p' + t.pri + '">' + (t.pri === 1 ? "高" : t.pri === 2 ? "中" : "低") + "</span>";
       if (t.due) {
         if (d < 0) tags += '<span class="tag due over">已逾期 ' + (-d) + " 天</span>";
         else if (d === 0) tags += '<span class="tag due today">今天到期</span>';
         else if (d === 1) tags += '<span class="tag due">明天到期</span>';
         else {
           var p = t.due.split("-");
-          tags += '<span class="tag due">' + (+p[1]) + "月" + (+p[2]) + "日到期</span>";
+          tags += '<span class="tag due">' + (+p[1]) + "月" + (+p[2]) + "日</span>";
         }
       }
 
       var row = document.createElement("div");
       row.className = "item" + (t.done ? " done" : "") + borderCls;
+      row.dataset.id = t.id;
       row.innerHTML =
         '<div class="check" title="' + (t.done ? "标记为未完成" : "标记为已完成") + '"></div>' +
+        '<span class="ripple"></span>' +
         '<div class="main"><div class="text"></div><div class="tags">' + tags + "</div></div>" +
         '<button class="delete" title="删除该事项">×</button>';
 
@@ -651,26 +889,38 @@
     var hasAny = state.todos.length > 0;
     if (items.length === 0) {
       empty.style.display = "block";
-      document.getElementById("emptyText").textContent =
-        !hasAny ? "暂无待办事项，先添加一件吧"
-        : state.status === "done" ? "还没有已完成的事项"
-        : state.status === "open" ? "太棒了，没有未完成事项"
-        : "该分类下暂无事项";
+      if (!hasAny)               empty.innerHTML = renderEmpty("暂无待办事项", "从上方输入框写下你的第一件事吧");
+      else if (state.status === "done")   empty.innerHTML = renderEmpty("还没有已完成事项", "完成一些任务后，它们会出现在这里");
+      else if (state.status === "open")   empty.innerHTML = renderEmpty("全部清空，太棒了", "享受这份来自自己的成就感");
+      else                       empty.innerHTML = renderEmpty("该分类下暂无事项", "试试切换分类或添加新的待办");
     } else {
       empty.style.display = "none";
     }
 
-    // 统计
-    var doneN = 0, todayN = 0;
+    // 统计 & 进度环
+    var doneN = 0, todayN = 0, overN = 0;
     state.todos.forEach(function (t) {
-      if (t.done) doneN++;
-      if (!t.done && t.due && dueDelta(t.due) === 0) todayN++;
+      if (t.done) { doneN++; return; }
+      if (!t.due) return;
+      var d = dueDelta(t.due);
+      if (d === 0) todayN++;
+      else if (d < 0) overN++;
     });
     document.getElementById("total").textContent = state.todos.length;
+    document.getElementById("doneCount").textContent = doneN;
     document.getElementById("pending").textContent = state.todos.length - doneN;
     document.getElementById("dueToday").textContent = todayN;
-    document.getElementById("clearDone").disabled = doneN === 0;
+    var overStat = document.getElementById("overStat");
+    document.getElementById("overCount").textContent = overN;
+    overStat.style.display = overN > 0 ? "inline-flex" : "none";
 
+    var total = state.todos.length;
+    var pct = total > 0 ? Math.round(doneN / total * 100) : 0;
+    document.getElementById("pct").textContent = pct + "%";
+    var C = 2 * Math.PI * 40; // r=40
+    document.getElementById("ringFg").setAttribute("stroke-dashoffset", String(C * (1 - pct / 100)));
+
+    document.getElementById("clearDone").disabled = doneN === 0;
     checkReminders();
   }
 
@@ -680,6 +930,12 @@
     if (!t) return;
     t.done = !t.done;
     save();
+    // 触发波纹
+    var row = document.querySelector('.item[data-id="' + id + '"]');
+    if (row) {
+      row.classList.add("rippling");
+      setTimeout(function () { row.classList.remove("rippling"); }, 600);
+    }
     render();
   }
 
@@ -705,7 +961,7 @@
     });
     input.value = "";
     document.getElementById("dueInput").value = "";
-    if (due) ensureNotifPermission();   // 用户手势内请求通知权限
+    if (due) ensureNotifPermission();
     save();
     render();
     input.focus();
@@ -716,7 +972,6 @@
   document.getElementById("newTodo").addEventListener("keydown", function (e) {
     if (e.key === "Enter") add();
   });
-
   document.getElementById("statusSeg").addEventListener("click", function (e) {
     var b = e.target.closest("button");
     if (!b) return;
@@ -724,7 +979,6 @@
     document.querySelectorAll("#statusSeg button").forEach(function (x) { x.classList.toggle("active", x === b); });
     render();
   });
-
   document.getElementById("catSeg").addEventListener("click", function (e) {
     var b = e.target.closest("button");
     if (!b) return;
@@ -732,32 +986,27 @@
     document.querySelectorAll("#catSeg button").forEach(function (x) { x.classList.toggle("active", x === b); });
     render();
   });
-
   document.getElementById("clearDone").addEventListener("click", function () {
     state.todos = state.todos.filter(function (t) { return !t.done; });
     save();
     render();
   });
-
   document.getElementById("alertClose").addEventListener("click", function () {
     var st = dueStats();
     dismissedKey = st.over + ":" + st.today;
     document.getElementById("alertBar").className = "alert-bar";
   });
 
-  /* 打开页面时若有到期事项，尝试请求通知权限（仅由用户手势触发；这里不强求） */
   window.addEventListener("load", function () {
     var d = new Date();
     var week = ["日", "一", "二", "三", "四", "五", "六"][d.getDay()];
-    document.getElementById("todayLine").textContent =
-      d.getFullYear() + " 年 " + (d.getMonth() + 1) + " 月 " + d.getDate() + " 日 · 星期" + week + " · 完成一件，勾掉一件。";
+    document.getElementById("todayLine").innerHTML =
+      "今天 <span class=\"dot\">·</span> <strong>" +
+      d.getFullYear() + " 年 " + (d.getMonth() + 1) + " 月 " + d.getDate() +
+      " 日 · 星期" + week + "</strong>";
 
     setTimeout(function () { checkReminders(); }, 800);
-
-    // 页面开着时，每分钟检查一次（如跨过午夜/新增到期事项）
     setInterval(function () { checkReminders(); }, 60000);
-
-    // 回到页面时立即刷新
     document.addEventListener("visibilitychange", function () {
       if (!document.hidden) checkReminders();
     });
