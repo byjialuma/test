@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>待办清单</title>
+<style>
+  :root {
+    --pku-red: #94070A;          /* 北大红：C0 M100 Y100 K45 / RGB 139,0,18 */
+    --pku-red-dark: #7a0508;
+    --pku-red-soft: #fbf0f0;
+    --text-main: #2b2b2b;
+    --text-light: #8a8a8a;
+    --line: #ece5e2;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    background: #faf8f7;
+    color: var(--text-main);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 40px 16px 60px;
+  }
+
+  .app { width: 100%; max-width: 600px; }
+
+  /* ===== 头部 ===== */
+  header { margin-bottom: 20px; }
+  header h1 {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--pku-red);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    letter-spacing: 2px;
+  }
+  header h1::before {
+    content: "";
+    width: 6px;
+    height: 26px;
+    background: var(--pku-red);
+    border-radius: 3px;
+  }
+  header .sub {
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--text-light);
+    padding-left: 16px;
+  }
+
+  /* ===== 输入卡片 ===== */
+  .composer {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 12px;
+    box-shadow: 0 2px 10px rgba(148, 7, 10, 0.05);
+  }
+  .composer:focus-within { border-color: var(--pku-red); box-shadow: 0 2px 14px rgba(148, 7, 10, 0.12); }
+
+  .input-row { display: flex; gap: 10px; padding: 2px 4px 0 8px; }
+  .input-row input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 15px;
+    background: transparent;
+    color: var(--text-main);
+  }
+  .input-row input::placeholder { color: #c4bdb9; }
+  .input-row button {
+    border: none;
+    background: var(--pku-red);
+    color: #fff;
+    font-size: 15px;
+    padding: 10px 22px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background .2s, transform .05s;
+    white-space: nowrap;
+  }
+  .input-row button:hover { background: var(--pku-red-dark); }
+  .input-row button:active { transform: scale(.97); }
+
+  .options {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 16px;
+    margin-top: 12px;
+    padding: 10px 8px 2px;
+    border-top: 1px dashed var(--line);
+  }
+  .opt { display: flex; align-items: center; gap: 6px; }
+  .opt .label {
+    font-size: 12px;
+    color: var(--text-light);
+    user-select: none;
+    white-space: nowrap;
+  }
+
+  .chip-group { display: flex; gap: 4px; flex-wrap: wrap; }
+  .opt-chip {
+    border: 1px solid transparent;
+    background: #f2efed;
+    color: #6f6a67;
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 14px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all .15s;
+    user-select: none;
+  }
+  .opt-chip .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .opt-chip:hover { background: #e9e4e1; }
+  .opt-chip.active { background: var(--pku-red-soft); border-color: var(--pku-red); color: var(--pku-red); font-weight: 600; }
+  .opt-chip.active .dot { box-shadow: 0 0 0 1px rgba(148,7,10,.3); }
+
+  .opt-chip.p1.active { background:#fbe9e9; border-color:#c0392b; color:#c0392b; }
+  .opt-chip.p2.active { background:#fdf3e0; border-color:#dd8a1e; color:#b06a12; }
+  .opt-chip.p3.active { background:#f0f2f3; border-color:#8f9aa3; color:#5c6670; }
+
+  .opt input[type="date"] {
+    border: 1px solid #ddd6d2;
+    border-radius: 8px;
+    font-size: 13px;
+    padding: 4px 8px;
+    color: var(--text-main);
+    background: #fff;
+    outline: none;
+    font-family: inherit;
+  }
+  .opt input[type="date"]:focus { border-color: var(--pku-red); }
+
+  /* ===== 提醒条 ===== */
+  .alert-bar {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    animation: slideIn .25s ease;
+  }
+  .alert-bar.show { display: flex; }
+  .alert-bar.over { background: #fdecec; color: #a02624; border: 1px solid #f2c6c4; }
+  .alert-bar.today { background: #fdf3e0; color: #9c6b13; border: 1px solid #eed9ae; }
+  .alert-bar .icon { font-size: 15px; }
+  .alert-bar .close {
+    margin-left: auto;
+    border: none;
+    background: none;
+    font-size: 16px;
+    cursor: pointer;
+    color: inherit;
+    opacity: .6;
+    padding: 0 2px;
+  }
+  .alert-bar .close:hover { opacity: 1; }
+
+  /* ===== 筛选 ===== */
+  .filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 16px; }
+  .filters .label { font-size: 12px; color: var(--text-light); }
+  .seg { display: flex; background: #f2efed; border-radius: 8px; padding: 2px; }
+  .seg button {
+    border: none;
+    background: none;
+    font-size: 13px;
+    padding: 5px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #6f6a67;
+    transition: all .15s;
+  }
+  .seg button.active { background: #fff; color: var(--pku-red); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .filters .spacer { flex: 1; }
+  .filters .hint { font-size: 12px; color: var(--text-light); }
+
+  /* ===== 列表 ===== */
+  .list { margin-top: 14px; }
+
+  .item {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    transition: box-shadow .2s;
+    animation: slideIn .25s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .item:hover { box-shadow: 0 3px 12px rgba(148, 7, 10, 0.06); }
+
+  .item.border-high { border-left: 3px solid var(--pku-red); }
+  .item.border-med  { border-left: 3px solid #dd8a1e; }
+  .item.border-low  { border-left: 3px solid transparent; }
+
+  .check {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid #d9cec9;
+    background: #fff;
+    cursor: pointer;
+    flex-shrink: 0;
+    position: relative;
+    margin-top: 1px;
+    transition: background .2s, border-color .2s;
+  }
+  .check:hover { border-color: var(--pku-red); }
+  .item.done .check { background: var(--pku-red); border-color: var(--pku-red); }
+  .item.done .check::after {
+    content: "";
+    position: absolute;
+    left: 6px; top: 2px;
+    width: 6px; height: 12px;
+    border: solid #fff;
+    border-width: 0 2.5px 2.5px 0;
+    transform: rotate(45deg);
+    animation: pop .15s ease;
+  }
+  @keyframes pop {
+    from { transform: rotate(45deg) scale(.4); opacity: 0; }
+    to   { transform: rotate(45deg) scale(1); opacity: 1; }
+  }
+
+  .main { flex: 1; min-width: 0; }
+  .text {
+    font-size: 15px;
+    line-height: 1.5;
+    word-break: break-all;
+    transition: color .2s;
+  }
+  .item.done .text { color: var(--text-light); text-decoration: line-through; text-decoration-color: #cfb4b1; }
+
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; align-items: center; }
+  .item.done .tags { opacity: .55; }
+
+  .tag {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 9px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+  }
+  .tag .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .tag.cat { background: #f2f0ee; color: #6f6a67; }
+  .tag.pri { font-weight: 600; }
+  .tag.p1 { background: #fbe9e9; color: #c0392b; }
+  .tag.p2 { background: #fdf3e0; color: #b06a12; }
+  .tag.p3 { background: #f0f2f3; color: #5c6670; }
+  .tag.due { background: #f3f2f0; color: #7c7671; }
+  .tag.due.today { background: var(--pku-red-soft); color: var(--pku-red); font-weight: 600; }
+  .tag.due.over { background: var(--pku-red); color: #fff; font-weight: 600; }
+
+  .delete {
+    border: none;
+    background: none;
+    color: #d9cec9;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity .2s, color .2s;
+    padding: 2px 4px;
+  }
+  .item:hover .delete { opacity: 1; }
+  .delete:hover { color: var(--pku-red); }
+
+  .empty { text-align: center; color: var(--text-light); font-size: 14px; padding: 36px 0; }
+  .empty .mark { font-size: 38px; display: block; margin-bottom: 10px; opacity: .45; }
+
+  /* ===== 底部 ===== */
+  footer {
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text-light);
+  }
+  footer .count strong { color: var(--pku-red); }
+  footer button {
+    border: none;
+    background: none;
+    color: var(--text-light);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 6px;
+    transition: color .2s;
+  }
+  footer button:hover { color: var(--pku-red); }
+  footer button:disabled { display: none; }
+</style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <h1>待办清单</h1>
+      <p class="sub" id="todayLine">记录每一件该做的事，完成一件，勾掉一件。</p>
+    </header>
+
+    <!-- 输入区 -->
+    <div class="composer">
+      <div class="input-row">
+        <input id="newTodo" type="text" placeholder="想做点什么？写下来吧…" maxlength="200" autocomplete="off">
+        <button id="addBtn">添加</button>
+      </div>
+      <div class="options">
+        <div class="opt">
+          <span class="label">分类</span>
+          <div class="chip-group" id="catGroup"></div>
+        </div>
+        <div class="opt">
+          <span class="label">优先级</span>
+          <div class="chip-group" id="priGroup"></div>
+        </div>
+        <div class="opt">
+          <span class="label">到期</span>
+          <input type="date" id="dueInput">
+        </div>
+      </div>
+    </div>
+
+    <!-- 提醒条 -->
+    <div class="alert-bar" id="alertBar">
+      <span class="icon">⏰</span>
+      <span id="alertText"></span>
+      <button class="close" id="alertClose" title="知道了">×</button>
+    </div>
+
+    <!-- 筛选 -->
+    <div class="filters">
+      <span class="label">状态</span>
+      <div class="seg" id="statusSeg">
+        <button data-s="all" class="active">全部</button>
+        <button data-s="open">未完成</button>
+        <button data-s="done">已完成</button>
+      </div>
+      <span class="label">分类</span>
+      <div class="seg" id="catSeg">
+        <button data-c="all" class="active">全部</button>
+        <button data-c="work">工作</button>
+        <button data-c="study">学习</button>
+        <button data-c="life">生活</button>
+        <button data-c="other">其他</button>
+      </div>
+      <span class="spacer"></span>
+      <span class="hint" id="sortHint">自动按优先级·到期排序</span>
+    </div>
+
+    <div class="list" id="list"></div>
+    <div class="empty" id="empty" style="display:none">
+      <span class="mark">☑</span>
+      <span id="emptyText">暂无待办事项，先添加一件吧</span>
+    </div>
+
+    <footer>
+      <span class="count">共 <strong id="total">0</strong> 项 · 待完成 <strong id="pending">0</strong> 项 · 今日到期 <strong id="dueToday">0</strong> 项</span>
+      <button id="clearDone">清除已完成</button>
+    </footer>
+  </main>
+
+<script>
+(function () {
+  "use strict";
+
+  var STORAGE_KEY = "pku-todo-list";
+  var REMIND_KEY  = "pku-todo-remind";
+
+  /* ---------- 常量 ---------- */
+  var CATS = [
+    { id: "work",  name: "工作", color: "#4a7fb5" },
+    { id: "study", name: "学习", color: "#3d9a8f" },
+    { id: "life",  name: "生活", color: "#e0a24a" },
+    { id: "other", name: "其他", color: "#9aa0a6" }
+  ];
+  var PRI_LEVELS = [
+    { val: 1, name: "高", color: "#c0392b" },
+    { val: 2, name: "中", color: "#b06a12" },
+    { val: 3, name: "低", color: "#5c6670" }
+  ];
+
+  var state = {
+    todos: loadTodos(),
+    cat: "other",     // 新增时的默认分类
+    pri: 2,           // 新增时的默认优先级
+    status: "all",    // all / open / done
+    catFilter: "all"  // 分类筛选
+  };
+
+  /* ---------- 工具 ---------- */
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+  function todayStr() {
+    var d = new Date();
+    return fmt(d);
+  }
+  function fmt(d) {
+    var m = ("0" + (d.getMonth() + 1)).slice(-2);
+    var day = ("0" + d.getDate()).slice(-2);
+    return d.getFullYear() + "-" + m + "-" + day;
+  }
+  function parseDue(s) {
+    var p = s.split("-");
+    return new Date(+p[0], +p[1] - 1, +p[2]);
+  }
+  /* 距今天数：0=今天，>0 未来，<0 已逾期 */
+  function dueDelta(dueStr) {
+    if (!dueStr) return null;
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return Math.round((parseDue(dueStr) - today) / 86400000);
+  }
+
+  function catById(id) {
+    for (var i = 0; i < CATS.length; i++) if (CATS[i].id === id) return CATS[i];
+    return CATS[3];
+  }
+
+  /* ---------- 数据 ---------- */
+  function loadTodos() {
+    try {
+      var arr = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      if (!Array.isArray(arr)) return [];
+      return arr.map(function (t) {
+        return {
+          id: t.id || uid(),
+          text: String(t.text || ""),
+          done: !!t.done,
+          cat: CATS.some(function (c) { return c.id === t.cat; }) ? t.cat : "other",
+          pri: (t.pri === 1 || t.pri === 2 || t.pri === 3) ? t.pri : 2,
+          due: typeof t.due === "string" ? t.due : "",
+          created: t.created || Date.now()
+        };
+      });
+    } catch (e) { return []; }
+  }
+
+  function save() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.todos)); } catch (e) {}
+  }
+
+  /* ---------- 排序：未完成置顶，按优先级→到期→创建顺序 ---------- */
+  function sorted() {
+    var now = todayStr();
+    return state.todos.slice().sort(function (a, b) {
+      if (a.done !== b.done) return a.done ? 1 : -1;
+      if (a.done) return b.created - a.created;
+      if (a.pri !== b.pri) return a.pri - b.pri;                    // 高(1)在前
+      var da = a.due ? dueDelta(a.due) : 9999;
+      var db = b.due ? dueDelta(b.due) : 9999;
+      if (da !== db) return da - db;                                // 临近到期在前（含逾期）
+      return b.created - a.created;
+    });
+  }
+
+  /* ---------- 渲染：筛选器 ---------- */
+  function renderCatOptions() {
+    var g = document.getElementById("catGroup");
+    var html = "";
+    CATS.forEach(function (c) {
+      html += '<button type="button" class="opt-chip" data-cat="' + c.id + '">' +
+              '<span class="dot" style="background:' + c.color + '"></span>' + c.name + '</button>';
+    });
+    g.innerHTML = html;
+    g.addEventListener("click", function (e) {
+      var b = e.target.closest(".opt-chip");
+      if (!b) return;
+      state.cat = b.dataset.cat;
+      syncOptChips();
+    });
+
+    var p = document.getElementById("priGroup");
+    var ph = "";
+    PRI_LEVELS.forEach(function (l) {
+      ph += '<button type="button" class="opt-chip p' + l.val + '" data-pri="' + l.val + '">' + l.name + '优先级</button>';
+    });
+    p.innerHTML = ph;
+    p.addEventListener("click", function (e) {
+      var b = e.target.closest(".opt-chip");
+      if (!b) return;
+      state.pri = +b.dataset.pri;
+      syncOptChips();
+    });
+    syncOptChips();
+  }
+
+  function syncOptChips() {
+    document.querySelectorAll("#catGroup .opt-chip").forEach(function (b) {
+      b.classList.toggle("active", b.dataset.cat === state.cat);
+    });
+    document.querySelectorAll("#priGroup .opt-chip").forEach(function (b) {
+      b.classList.toggle("active", +b.dataset.pri === state.pri);
+    });
+  }
+
+  /* ---------- 提醒（浏览器通知，本地可用性兜底为页面横幅） ---------- */
+  function notifSupported() {
+    return typeof Notification !== "undefined";
+  }
+  function ensureNotifPermission() {
+    if (notifSupported() && Notification.permission === "default") {
+      Notification.requestPermission().catch(function () {});
+    }
+  }
+  function readRemindLog() {
+    try {
+      var o = JSON.parse(localStorage.getItem(REMIND_KEY) || "{}");
+      return (o && o.date === todayStr()) ? (o.ids || []) : [];
+    } catch (e) { return []; }
+  }
+  function writeRemindLog(ids) {
+    try { localStorage.setItem(REMIND_KEY, JSON.stringify({ date: todayStr(), ids: ids })); } catch (e) {}
+  }
+
+  function dueStats() {
+    var over = 0, today = 0, soon = 0;
+    var soonId = null;
+    state.todos.forEach(function (t) {
+      if (t.done || !t.due) return;
+      var d = dueDelta(t.due);
+      if (d < 0) { over++; soonId = t.id; }
+      else if (d === 0) { today++; if (!soonId) soonId = t.id; }
+      else if (d <= 2) { soon++; }
+    });
+    return { over: over, today: today, soon: soon };
+  }
+
+  var dismissedKey = null;   // 用户手动关闭的提醒快照（逾期数:今日数）
+
+  /* 页面横幅 + 系统通知（同一任务每天至多一次系统通知） */
+  function checkReminders(interactive) {
+    var bar = document.getElementById("alertBar");
+    var txt = document.getElementById("alertText");
+    var st = dueStats();
+    var key = st.over + ":" + st.today;
+
+    // 页面横幅（若与上次手动关闭的状态一致则不再打扰）
+    if (dismissedKey === key && !interactive) {
+      bar.className = "alert-bar";
+    } else if (st.over > 0) {
+      bar.className = "alert-bar show over";
+      txt.textContent = "有 " + st.over + " 项已逾期" + (st.today > 0 ? "，另有 " + st.today + " 项今日到期" : "") + "，记得处理哦";
+    } else if (st.today > 0) {
+      bar.className = "alert-bar show today";
+      txt.textContent = "有 " + st.today + " 项今天到期";
+    } else {
+      bar.className = "alert-bar";
+    }
+
+    // 系统通知（每天每任务一次）
+    var reminded = readRemindLog();
+    var dueNow = state.todos.filter(function (t) {
+      if (t.done || !t.due) return false;
+      var d = dueDelta(t.due);
+      return d <= 0;
+    });
+    var fresh = dueNow.filter(function (t) { return reminded.indexOf(t.id) < 0; });
+    if (fresh.length && notifSupported() && Notification.permission === "granted") {
+      var names = fresh.slice(0, 3).map(function (t) {
+        return "「" + t.text + "」" + (dueDelta(t.due) < 0 ? "(已逾期)" : "(今天到期)");
+      }).join("、");
+      var body = names + (fresh.length > 3 ? " 等 " + fresh.length + " 项" : "");
+      try {
+        var n = new Notification("待办清单提醒", { body: body });
+        setTimeout(function () { try { n.close(); } catch (e) {} }, 8000);
+      } catch (e) {}
+    }
+    if (fresh.length) {
+      fresh.forEach(function (t) { reminded.push(t.id); });
+      writeRemindLog(reminded);
+    }
+
+    // 标签页标题提醒
+    document.title = st.over > 0 ? "(" + st.over + " 逾期) 待办清单" : "待办清单";
+  }
+
+  /* ---------- 列表渲染 ---------- */
+  function visibleTodos() {
+    return sorted().filter(function (t) {
+      if (state.status === "open" && t.done) return false;
+      if (state.status === "done" && !t.done) return false;
+      if (state.catFilter !== "all" && t.cat !== state.catFilter) return false;
+      return true;
+    });
+  }
+
+  function render() {
+    var list = document.getElementById("list");
+    var empty = document.getElementById("empty");
+    var items = visibleTodos();
+
+    list.innerHTML = "";
+    items.forEach(function (t) {
+      var c = catById(t.cat);
+      var d = t.due ? dueDelta(t.due) : null;
+
+      var borderCls = t.done ? "" : (t.pri === 1 ? " border-high" : t.pri === 2 ? " border-med" : " border-low");
+
+      var tags = "";
+      tags += '<span class="tag cat"><span class="dot" style="background:' + c.color + '"></span>' + c.name + "</span>";
+      tags += '<span class="tag pri p' + t.pri + '">' + (t.pri === 1 ? "高" : t.pri === 2 ? "中" : "低") + "优先级</span>";
+      if (t.due) {
+        if (d < 0) tags += '<span class="tag due over">已逾期 ' + (-d) + " 天</span>";
+        else if (d === 0) tags += '<span class="tag due today">今天到期</span>';
+        else if (d === 1) tags += '<span class="tag due">明天到期</span>';
+        else {
+          var p = t.due.split("-");
+          tags += '<span class="tag due">' + (+p[1]) + "月" + (+p[2]) + "日到期</span>";
+        }
+      }
+
+      var row = document.createElement("div");
+      row.className = "item" + (t.done ? " done" : "") + borderCls;
+      row.innerHTML =
+        '<div class="check" title="' + (t.done ? "标记为未完成" : "标记为已完成") + '"></div>' +
+        '<div class="main"><div class="text"></div><div class="tags">' + tags + "</div></div>" +
+        '<button class="delete" title="删除该事项">×</button>';
+
+      row.querySelector(".text").textContent = t.text;
+      row.querySelector(".check").addEventListener("click", function () { toggle(t.id); });
+      row.querySelector(".delete").addEventListener("click", function (e) {
+        e.stopPropagation();
+        remove(t.id);
+      });
+      list.appendChild(row);
+    });
+
+    // 空状态
+    var hasAny = state.todos.length > 0;
+    if (items.length === 0) {
+      empty.style.display = "block";
+      document.getElementById("emptyText").textContent =
+        !hasAny ? "暂无待办事项，先添加一件吧"
+        : state.status === "done" ? "还没有已完成的事项"
+        : state.status === "open" ? "太棒了，没有未完成事项"
+        : "该分类下暂无事项";
+    } else {
+      empty.style.display = "none";
+    }
+
+    // 统计
+    var doneN = 0, todayN = 0;
+    state.todos.forEach(function (t) {
+      if (t.done) doneN++;
+      if (!t.done && t.due && dueDelta(t.due) === 0) todayN++;
+    });
+    document.getElementById("total").textContent = state.todos.length;
+    document.getElementById("pending").textContent = state.todos.length - doneN;
+    document.getElementById("dueToday").textContent = todayN;
+    document.getElementById("clearDone").disabled = doneN === 0;
+
+    checkReminders();
+  }
+
+  /* ---------- 操作 ---------- */
+  function toggle(id) {
+    var t = state.todos.find(function (x) { return x.id === id; });
+    if (!t) return;
+    t.done = !t.done;
+    save();
+    render();
+  }
+
+  function remove(id) {
+    state.todos = state.todos.filter(function (x) { return x.id !== id; });
+    save();
+    render();
+  }
+
+  function add() {
+    var input = document.getElementById("newTodo");
+    var text = input.value.trim();
+    if (!text) { input.focus(); return; }
+    var due = document.getElementById("dueInput").value || "";
+    state.todos.push({
+      id: uid(),
+      text: text,
+      done: false,
+      cat: state.cat,
+      pri: state.pri,
+      due: due,
+      created: Date.now()
+    });
+    input.value = "";
+    document.getElementById("dueInput").value = "";
+    if (due) ensureNotifPermission();   // 用户手势内请求通知权限
+    save();
+    render();
+    input.focus();
+  }
+
+  /* ---------- 事件 ---------- */
+  document.getElementById("addBtn").addEventListener("click", add);
+  document.getElementById("newTodo").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") add();
+  });
+
+  document.getElementById("statusSeg").addEventListener("click", function (e) {
+    var b = e.target.closest("button");
+    if (!b) return;
+    state.status = b.dataset.s;
+    document.querySelectorAll("#statusSeg button").forEach(function (x) { x.classList.toggle("active", x === b); });
+    render();
+  });
+
+  document.getElementById("catSeg").addEventListener("click", function (e) {
+    var b = e.target.closest("button");
+    if (!b) return;
+    state.catFilter = b.dataset.c;
+    document.querySelectorAll("#catSeg button").forEach(function (x) { x.classList.toggle("active", x === b); });
+    render();
+  });
+
+  document.getElementById("clearDone").addEventListener("click", function () {
+    state.todos = state.todos.filter(function (t) { return !t.done; });
+    save();
+    render();
+  });
+
+  document.getElementById("alertClose").addEventListener("click", function () {
+    var st = dueStats();
+    dismissedKey = st.over + ":" + st.today;
+    document.getElementById("alertBar").className = "alert-bar";
+  });
+
+  /* 打开页面时若有到期事项，尝试请求通知权限（仅由用户手势触发；这里不强求） */
+  window.addEventListener("load", function () {
+    var d = new Date();
+    var week = ["日", "一", "二", "三", "四", "五", "六"][d.getDay()];
+    document.getElementById("todayLine").textContent =
+      d.getFullYear() + " 年 " + (d.getMonth() + 1) + " 月 " + d.getDate() + " 日 · 星期" + week + " · 完成一件，勾掉一件。";
+
+    setTimeout(function () { checkReminders(); }, 800);
+
+    // 页面开着时，每分钟检查一次（如跨过午夜/新增到期事项）
+    setInterval(function () { checkReminders(); }, 60000);
+
+    // 回到页面时立即刷新
+    document.addEventListener("visibilitychange", function () {
+      if (!document.hidden) checkReminders();
+    });
+  });
+
+  renderCatOptions();
+  render();
+})();
+</script>
+</body>
+</html>
